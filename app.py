@@ -3,10 +3,11 @@ import requests
 from bs4 import BeautifulSoup
 from requests.packages.urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
+import concurrent.futures
 
 app = Flask(__name__)
 
-# 定义抓取数据的函数
+# 定義抓取數據的函數
 def scrape_data(url, data_ids):
     retry_strategy = Retry(
         total=3,
@@ -18,7 +19,7 @@ def scrape_data(url, data_ids):
     http.mount("http://", adapter)
     http.mount("https://", adapter)
     try:
-        response = http.get(url, timeout=10)
+        response = http.get(url, timeout=5)  # 將超時時間設置為5秒
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
         data = {}
@@ -29,28 +30,38 @@ def scrape_data(url, data_ids):
     except requests.exceptions.RequestException as e:
         return {data_id: f"Error occurred: {e}" for data_id in data_ids}
 
-# 定义路由和视图函数
+def scrape_data_parallel(targets):
+    data_list = []
+    
+    def fetch_data(target):
+        return scrape_data(target['url'], target['data_ids'])
+    
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(fetch_data, target) for target in targets]
+        for future in concurrent.futures.as_completed(futures):
+            data_list.append(future.result())
+    
+    return data_list
+
+# 定義路由和視圖函數
 @app.route('/')
 def index():
     targets = [
         {
             'url': 'http://tienching.ipvita.net/InstantPower.aspx?gw6UXnBQFxQcqRQvH_s-Zw&lang=traditional_chinese&time=0',
-            'data_ids': ['lbl_online_date','lbl_daily_pw', 'lbl_today_price','lbl_total_price','lbl_system_time']
+            'data_ids': ['lbl_online_date', 'lbl_daily_pw', 'lbl_today_price', 'lbl_total_price', 'lbl_system_time']
         },
         {
             'url': 'http://tienching.ipvita.net/InstantPower.aspx?9SGSfISfMFauB-qNFJwe2w&lang=traditional_chinese&time=',
-            'data_ids': ['lbl_online_date','lbl_daily_pw', 'lbl_today_price','lbl_total_price','lbl_system_time']
+            'data_ids': ['lbl_online_date', 'lbl_daily_pw', 'lbl_today_price', 'lbl_total_price', 'lbl_system_time']
         },
         {
             'url': 'http://tienching.ipvita.net/InstantPower.aspx?Us4azBhQh_643NPCj6EZzQ&lang=traditional_chinese&time=0',
-            'data_ids': ['lbl_online_date','lbl_daily_pw', 'lbl_today_price','lbl_total_price','lbl_system_time']
+            'data_ids': ['lbl_online_date', 'lbl_daily_pw', 'lbl_today_price', 'lbl_total_price', 'lbl_system_time']
         }
     ]
 
-    data_list = []
-    for target in targets:
-        data = scrape_data(target['url'], target['data_ids'])
-        data_list.append(data)
+    data_list = scrape_data_parallel(targets)
 
     id_to_chinese = {
         'lbl_online_date': '系統掛表日期',
@@ -66,10 +77,10 @@ def index():
         <meta charset="utf-8">
         <title>太陽能三期數據整合</title>
         <style>
-            body { font-family: Times New Roman, serif; font-size:20px;margin: 20px; }
+            body { font-family: Times New Roman, serif; font-size:20px; margin: 20px; }
             h1 { color: #333; }
-            ul { list-style-type: none; padding: 0;  }
-            li { background: #f4f4f4; margin: 5px 0; padding: 10px; border-radius: 5px;}
+            ul { list-style-type: none; padding: 0; }
+            li { background: #f4f4f4; margin: 5px 0; padding: 10px; border-radius: 5px; }
         </style>
     </head>
     <body>
@@ -86,7 +97,7 @@ def index():
     </html>
     """
 
-    return render_template_string(html_content, data_list=data_list ,id_to_chinese=id_to_chinese)
+    return render_template_string(html_content, data_list=data_list, id_to_chinese=id_to_chinese)
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
