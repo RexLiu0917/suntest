@@ -1,4 +1,3 @@
 Flask
-requests
+aiohttp
 beautifulsoup4
-urllib3
