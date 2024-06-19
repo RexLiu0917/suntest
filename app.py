@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 async def fetch(session, url, data_ids):
     try:
         logging.info(f"Fetching data from {url}")
-        async with session.get(url, timeout=10) as response:
+        async with session.get(url, timeout=15) as response:  # 增加超時時間
             response.raise_for_status()
             content = await response.text()
             soup = BeautifulSoup(content, 'html.parser')
