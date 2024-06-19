@@ -2,12 +2,17 @@ from flask import Flask, render_template_string
 import aiohttp
 import asyncio
 from bs4 import BeautifulSoup
+import logging
 
 app = Flask(__name__)
+
+# 設置日誌記錄
+logging.basicConfig(level=logging.INFO)
 
 # 定義異步抓取數據的函數
 async def fetch(session, url, data_ids):
     try:
+        logging.info(f"Fetching data from {url}")
         async with session.get(url, timeout=5) as response:
             response.raise_for_status()
             content = await response.text()
@@ -16,8 +21,10 @@ async def fetch(session, url, data_ids):
             for data_id in data_ids:
                 element = soup.find('span', id=data_id)
                 data[data_id] = element.text if element else f"找不到 id 為 {data_id} 的 span 元素"
+            logging.info(f"Fetched data: {data}")
             return data
     except Exception as e:
+        logging.error(f"Error fetching data from {url}: {e}")
         return {data_id: f"Error occurred: {e}" for data_id in data_ids}
 
 async def scrape_data(targets):
@@ -30,6 +37,7 @@ async def scrape_data(targets):
 # 定義路由和視圖函數
 @app.route('/')
 def index():
+    logging.info("Index route accessed")
     targets = [
         {
             'url': 'http://tienching.ipvita.net/InstantPower.aspx?gw6UXnBQFxQcqRQvH_s-Zw&lang=traditional_chinese&time=0',
@@ -45,7 +53,11 @@ def index():
         }
     ]
 
-    data_list = asyncio.run(scrape_data(targets))
+    try:
+        data_list = asyncio.run(scrape_data(targets))
+    except Exception as e:
+        logging.error(f"Error in scrape_data: {e}")
+        return f"Error occurred: {e}"
 
     id_to_chinese = {
         'lbl_online_date': '系統掛表日期',
@@ -84,4 +96,5 @@ def index():
     return render_template_string(html_content, data_list=data_list, id_to_chinese=id_to_chinese)
 
 if __name__ == '__main__':
+    logging.info("Starting Flask app")
     app.run(port=5000, debug=True)
