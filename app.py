@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 async def fetch(session, url, data_ids):
     try:
         logging.info(f"Fetching data from {url}")
-        async with session.get(url, timeout=5) as response:
+        async with session.get(url, timeout=10) as response:
             response.raise_for_status()
             content = await response.text()
             soup = BeautifulSoup(content, 'html.parser')
@@ -23,9 +23,15 @@ async def fetch(session, url, data_ids):
                 data[data_id] = element.text if element else f"找不到 id 為 {data_id} 的 span 元素"
             logging.info(f"Fetched data: {data}")
             return data
+    except aiohttp.ClientError as e:
+        logging.error(f"Client error fetching data from {url}: {e}")
+        return {data_id: f"Client error occurred: {e}" for data_id in data_ids}
+    except asyncio.TimeoutError as e:
+        logging.error(f"Timeout error fetching data from {url}: {e}")
+        return {data_id: f"Timeout error occurred: {e}" for data_id in data_ids}
     except Exception as e:
-        logging.error(f"Error fetching data from {url}: {e}")
-        return {data_id: f"Error occurred: {e}" for data_id in data_ids}
+        logging.error(f"Unexpected error fetching data from {url}: {e}")
+        return {data_id: f"Unexpected error occurred: {e}" for data_id in data_ids}
 
 async def scrape_data(targets):
     async with aiohttp.ClientSession() as session:
