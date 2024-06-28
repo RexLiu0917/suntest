@@ -66,20 +66,20 @@ def index():
         return f"Error occurred: {e}"
 
     def get_daily_powers(data_list):
-    return [int(data.get('lbl_daily_pw', 0)) for data in data_list]
+        return [int(data.get('lbl_daily_pw', 0).replace(',', '')) for data in data_list if data.get('lbl_daily_pw', 0).replace(',', '').isdigit()]
     # 使用函數獲取所有 'lbl_daily_pw' 的值
     daily_powers = get_daily_powers(data_list)
     daily_total_powers = sum(daily_powers)
     
     def get_daily_prices(data_list):
-        return [int(data.get('lbl_today_price', 0)) for data in data_list]
+        return [int(data.get('lbl_today_price', 0).replace(',', '')) for data in data_list if data.get('lbl_today_price', 0).replace(',', '').isdigit()]
     # 使用函數獲取所有 'lbl_today_price' 的值
     daily_prices = get_daily_prices(data_list)
     daily_total_prices = sum(daily_prices)
     
     id_to_chinese = {
         'lbl_online_date': '系統掛表日期',
-        'lbl_daily_pw': '今日發電量kw',
+        'lbl_daily_pw': '今日發電量kwh',
         'lbl_today_price': '今日收入',
         'lbl_total_price': '掛表至今總收入',
         'lbl_system_time': '更新時間',
@@ -91,7 +91,7 @@ def index():
         <meta charset="utf-8">
         <title>太陽能三期數據整合</title>
         <style>
-            body { 
+        body { 
             font-family: "Times New Roman", serif; 
             font-size: 50px;
             font-weight: bold; 
