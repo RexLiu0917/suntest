@@ -108,7 +108,8 @@ def index():
             background-color: #FAFAD2;
         }
         h1 { 
-            color: #FF4500; 
+            color: #FF4500;
+            text-align: center;
         }
         h2{
             background-color: #FFDEAD;
