@@ -66,13 +66,23 @@ def index():
         return f"Error occurred: {e}"
 
     def get_daily_powers(data_list):
-        return [int(data.get('lbl_daily_pw', 0).replace(',', '')) for data in data_list if data.get('lbl_daily_pw', 0).replace(',', '').isdigit()]
+        try:
+            return [int(data.get('lbl_daily_pw', '0').replace(',', '')) for data in data_list if data.get('lbl_daily_pw', '0').replace(',', '').isdigit()]
+        except Exception as e:
+            logging.error(f"Error converting daily powers: {e}")
+            return [0]
+    
     # 使用函數獲取所有 'lbl_daily_pw' 的值
     daily_powers = get_daily_powers(data_list)
     daily_total_powers = sum(daily_powers)
     
     def get_daily_prices(data_list):
-        return [int(data.get('lbl_today_price', 0).replace(',', '')) for data in data_list if data.get('lbl_today_price', 0).replace(',', '').isdigit()]
+        try:
+            return [int(data.get('lbl_today_price', '0').replace(',', '')) for data in data_list if data.get('lbl_today_price', '0').replace(',', '').isdigit()]
+        except Exception as e:
+            logging.error(f"Error converting daily prices: {e}")
+            return [0]
+    
     # 使用函數獲取所有 'lbl_today_price' 的值
     daily_prices = get_daily_prices(data_list)
     daily_total_prices = sum(daily_prices)
